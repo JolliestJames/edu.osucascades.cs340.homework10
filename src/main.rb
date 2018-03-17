@@ -1,5 +1,8 @@
 #!/usr/bin/ruby
 
+# Written by: James Martinez
+# Assignment: Homework 10 - Database-Backed Applications with Redis and MongoDB
+
 require 'mongo'
 require 'redis'
 
@@ -50,10 +53,35 @@ print_all_guitars(guitar_keys)
 
 Mongo::Logger.logger.level = ::Logger::FATAL
 
-client = Mongo::Client.new(['127.0.0.1:27017'], :database => 'testdb')
+client = Mongo::Client.new(['127.0.0.1:27017'])
+db = Mongo::Database.new(client, :guitars)
 
-client.collections.each { |c| puts c.name }
+guitar_collection = Mongo::Collection.new(db, 'guitars')
 
-client[:guitars].find.each { |g| puts g }
+guitar_collection.drop
+
+puts "Inserting guitars"
+guitar_collection.insert_one({name: "Stratocaster", make:"Fender", price: 1200})
+guitar_collection.insert_one({name: "Telecaster", make:"Fender", price: 1000})
+guitar_collection.insert_one({name: "Les Paul", make:"Gibson", price: 4000})
+guitar_collection.insert_one({name: "Stratoblaster", make:"Walmart", price: 100})
+
+guitar_collection.find.each do |g|
+	puts  "#{g["name"]}, #{g["make"]}, #{g["price"]}"
+end
+
+puts "Deleting a guitar"
+guitar_collection.find_one_and_delete({name: "Stratoblaster"})
+
+guitar_collection.find.each do |g|
+	puts  "#{g["name"]}, #{g["make"]}, #{g["price"]}"
+end
+
+puts "Updating a guitar"
+guitar_collection.find_one_and_update({ name: 'Les Paul' }, { "$set" => { make: 'Epiphone', price: 600 }})
+
+guitar_collection.find.each do |g|
+	puts  "#{g["name"]}, #{g["make"]}, #{g["price"]}"
+end
 
 client.close
